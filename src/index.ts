@@ -1,7 +1,5 @@
 import { Store, MutationPayload } from "vuex";
 import merge from "deepmerge";
-import * as shvl from "shvl";
-
 interface Storage {
   getItem: (key: string) => any;
   setItem: (key: string, value: any) => void;
@@ -25,6 +23,19 @@ interface Options<State> {
   overwrite?: boolean;
   assertStorage?: (storage: Storage) => void | Error;
 }
+
+
+export function get(object, path, def) {
+  return (object = (path.split ? path.split('.') : path).reduce(function (obj, p) {
+    return obj && obj[p]
+  }, object)) === undefined ? def : object;
+};
+
+export function set  (object, path, val, obj) {
+  return ((path = path.split ? path.split('.') : path.slice(0)).slice(0, -1).reduce(function (obj, p) {
+    return (!/^(__proto__|constructor|prototype)$/.test(p))? obj[p] = obj[p] || {} : {};
+  }, obj = object)[path.pop()] = val), object;
+};
 
 export default function <State>(
   options?: Options<State>
@@ -57,7 +68,7 @@ export default function <State>(
   function reducer(state, paths) {
     return Array.isArray(paths)
       ? paths.reduce(function (substate, path) {
-          return shvl.set(substate, path, shvl.get(state, path));
+          return set(substate, path, get(state, path));
         }, {})
       : state;
   }
